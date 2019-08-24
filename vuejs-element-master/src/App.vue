@@ -9,9 +9,8 @@
                         <li class="input-serach">
                             <el-input :placeholder="placeholder" v-model="keywords" style="width: 300px;">
                                 <el-select v-model="select" @change="searchFieldChange" slot="prepend">
-                                    <el-option label="用户名" value="username"></el-option>
-                                    <el-option label="姓名" value="name"></el-option>
-                                    <el-option label="电话" value="phone"></el-option>
+                                    <el-option label="店铺ID" value="store_id"></el-option>
+                                    <el-option label="バーコード" value="bar_code"></el-option>
                                 </el-select>
                                 <el-button type="danger" class="danger" slot="append" icon="search" @click="query"></el-button>
                             </el-input>
@@ -20,12 +19,12 @@
                     <!-- 操作 -->
                     <ul class="btn-edit fr">
                         <li >
-                            <el-button type="primary" @click="dialogCreateVisible = true">添加用户</el-button>
-                            <el-button type="primary" icon="delete" :disabled="selected.length==0" @click="removeUsers()"  >删除</el-button>
+                            <el-button type="primary" @click="dialogCreateVisible = true">新規</el-button>
+                            <el-button type="primary" icon="delete" :disabled="selected.length==0" @click="removeUsers()"  ></el-button>
                         </li>
                     </ul>
                     <!-- 用户列表-->
-                    <el-table :data="users"
+                    <el-table :data="options"
                               stripe
                               v-loading="loading"
                               element-loading-text="拼命加载中..."
@@ -36,23 +35,38 @@
                         <el-table-column type="selection"
                                          width="60">
                         </el-table-column>
-                        <el-table-column sortable="custom" prop="username"
-                                         label="用户名"
+                        <el-table-column sortable="custom" prop="id"
+                                         label="DBID"
+                                         width="100" hidden="true">
+                        </el-table-column>
+
+                        <el-table-column sortable="custom" prop="store_id"
+                                         label="店铺ID"
                                          width="100">
                         </el-table-column>
-                        <el-table-column prop="name"
-                                         label="姓名"
-                                         width="80">
+                        <el-table-column sortable="custom" prop="store_name"
+                                         label="店铺名"
+                                         width="199">
                         </el-table-column>
-                        <el-table-column prop="phone"
-                                         label="手机">
+                        <el-table-column prop="option_id"
+                                         label="オプションID"
+                                         width="150">
                         </el-table-column>
-                        <el-table-column prop="email"
-                                         label="邮箱">
+                        <el-table-column prop="option_name"
+                                         label="オプション表示名"
+                                         width="299">
                         </el-table-column>
-                        <el-table-column prop="create_time" sortable="custom" inline-template
-                                         label="注册日期">
-                            <div>{{ row.create_time | moment('YYYY年MM月DD日 HH:mm:ss')}}</div>
+                        <el-table-column prop="option_money"
+                                         label="価格"
+                                         width="100">
+                        </el-table-column>
+                        <!--<el-table-column prop="create_time" sortable="custom" inline-template-->
+                                         <!--label="注册日期">-->
+                            <!--<div>{{ row.create_time | moment('YYYY年MM月DD日 HH:mm:ss')}}</div>-->
+                        <!--</el-table-column>-->
+                        <el-table-column prop="bar_code"
+                                         label="バーコード"
+                                         width="199">
                         </el-table-column>
                         <el-table-column inline-template
                                          label="操作"
@@ -82,23 +96,21 @@
     <!-- 创建用户 begin-->
     <el-dialog title="创建用户" v-model="dialogCreateVisible" :close-on-click-modal="false" :close-on-press-escape="false" @close="reset" >
         <el-form id="#create" :model="create" :rules="rules" ref="create" label-width="100px">
-            <el-form-item label="用户名" prop="username">
-                <el-input v-model="create.username"></el-input>
+
+            <el-form-item label="店舗ID" prop="store_id">
+                <el-input v-model="create.store_id"></el-input>
             </el-form-item>
-            <el-form-item label="姓名" prop="name">
-                <el-input v-model="create.name"></el-input>
+            <el-form-item label="オプションID" prop="option_id">
+                <el-input v-model="create.option_id"></el-input>
             </el-form-item>
-            <el-form-item label="密码" prop="password">
-                <el-input v-model="create.password" type="password" auto-complete="off"></el-input>
+            <el-form-item label="オプション名" prop="option_name">
+                <el-input v-model="create.option_name" ></el-input>
             </el-form-item>
-            <el-form-item label="确认密码" prop="checkpass">
-                <el-input v-model="create.checkpass" type="password"></el-input>
+            <el-form-item label="価格" prop="option_money">
+                <el-input v-model="create.option_money" ></el-input>
             </el-form-item>
-            <el-form-item label="电话" prop="phone">
-                <el-input v-model="create.phone"></el-input>
-            </el-form-item>
-            <el-form-item label="邮箱" prop="email">
-                <el-input v-model="create.email"></el-input>
+            <el-form-item label="バーコード" prop="bar_code">
+                <el-input v-model="create.bar_code"></el-input>
             </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -107,16 +119,25 @@
         </div>
     </el-dialog>
     <!-- 修改用户 begin-->
-    <el-dialog title="修改用户信息" v-model="dialogUpdateVisible"  :close-on-click-modal="false" :close-on-press-escape="false">
+    <el-dialog title="修改Option信息" v-model="dialogUpdateVisible"  :close-on-click-modal="false" :close-on-press-escape="false">
         <el-form id="#update" :model="update" :rules="updateRules" ref="update" label-width="100px">
-            <el-form-item label="姓名" prop="name">
-                <el-input v-model="update.name"></el-input>
+            <el-form-item label="DBID" prop="store_id">
+                <el-input v-model="update.id" disabled="true"></el-input>
             </el-form-item>
-            <el-form-item label="电话" prop="phone">
-                <el-input v-model="update.phone"></el-input>
+            <el-form-item label="店舗ID" prop="store_id">
+                <el-input v-model="update.store_id" disabled="true"></el-input>
             </el-form-item>
-            <el-form-item label="邮箱" prop="email">
-                <el-input v-model="update.email"></el-input>
+            <el-form-item label="オプションID" prop="option_id">
+                <el-input v-model="update.option_id" disabled="true"></el-input>
+            </el-form-item>
+            <el-form-item label="オプション名" prop="option_name">
+                <el-input v-model="update.option_name" ></el-input>
+            </el-form-item>
+            <el-form-item label="価格" prop="option_money">
+                <el-input v-model="update.option_money" ></el-input>
+            </el-form-item>
+            <el-form-item label="バーコード" prop="bar_code">
+                <el-input v-model="update.bar_code"></el-input>
             </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -127,6 +148,7 @@
   </div>
 </template>
 <script>
+
 var placeholders={"name":"请输入查找姓名","username":"请输入查找用户名","phone":"请输入查找电话"};
 function getuuid(){
     var uid = [];
@@ -154,27 +176,31 @@ export default {
       };
 
       return {
-          url: 'url',
-          users: [
-          ],
+          getUrl: 'http://localhost:8888/phalapirrelease/Public/Orderapi/?service=OptionSet.getOptions',
+          createUrl: 'http://localhost:8888/phalapirrelease/Public/Orderapi/?service=OptionSet.createOption',
+          deleteUrl: 'http://localhost:8888/phalapirrelease/Public/Orderapi/?service=OptionSet.deleteOption',
+          updateUrl:'http://localhost:8888/phalapirrelease/Public/Orderapi/?service=OptionSet.updateOption',
+          options: [],
           create: {
-              id: '',
-              username: '',
-              name: '',
-              password: '',
-              checkpass: '',
-              phone: '',
-              email: '',
+              store_id: '',
+              option_id: '',
+              option_name: '',
+              option_money: '',
+              bar_code: '',
               is_active: true
           },
           currentId:'',
           update:{
-              name: '',
-              phone: '',
-              email: '',
+              id:'',
+              store_id: '',
+              option_id: '',
+              option_name: '',
+              option_money: '',
+              bar_code: '',
               is_active: true
           },
           rules: {
+              //TODO FRONT CHECK
               name: [
                   { required: true, message: '请输入姓名', trigger: 'blur' },
                   { min: 3, max: 15, message: '长度在 3 到 15 个字符'}
@@ -214,14 +240,13 @@ export default {
           filter: {
               per_page: 10, // 页大小
               page: 1, // 当前页
-              name:'',
-              username:'',
-              phone:'',
+              store_id:'',
+              bar_code:'',
               sorts:''
           },
           total_rows: 0,
           keywords: '', //搜索框的关键字内容
-          select: 'username', //搜索框的搜索字段
+          select: '選択', //搜索框的搜索字段
           loading: true,
           selected: [], //已选择项
           dialogCreateVisible: false, //创建对话框的显示状态
@@ -268,22 +293,26 @@ export default {
           this.filter.page = val;
           this.getUsers();
       },
-      setCurrent(user){
-          this.currentId=user.id;
-          this.update.name=user.name;
-          this.update.phone=user.phone;
-          this.update.email=user.email;
-          this.update.is_active=user.is_active;
+      setCurrent(option){
+          this.currentId=option.id;
+          this.update.id=option.id;
+          this.update.store_id=option.store_id;
+          this.update.option_id=option.option_id;
+          this.update.option_name=option.option_name;
+          this.update.option_money=option.option_money;
+          this.update.bar_code=option.bar_code;
+          this.update.is_active=option.is_active;
           this.dialogUpdateVisible=true;
+
       },
       // 重置表单
       reset() {
           this.$refs.create.resetFields();
       },
       query(){
-          this.filter.name='';
-          this.filter.username='';
-          this.filter.phone='';
+
+          this.filter.store_id='3';
+          this.filter.bar_code='';
           this.filter[this.select]=this.keywords;
           this.getUsers();
       },
@@ -291,10 +320,10 @@ export default {
       getUsers() {
           this.loading = true;
 
-          var resource = this.$resource(this.url);
+          var resource = this.$resource(this.getUrl);
           resource.query(this.filter)
               .then((response) => {
-              this.users = response.data.datas;
+              this.options = response.data.data;
               this.total_rows = response.data.total_rows;
               this.loading = false;
               this.selected.splice(0,this.selected.length);
@@ -311,10 +340,10 @@ export default {
           // 主动校验
           this.$refs.create.validate((valid) => {
               if (valid) {
-                  this.create.id=getuuid();
+                  //this.create.id=getuuid();
                   this.createLoading=true;
-                  var resource = this.$resource(this.url);
-                  resource.save(this.create)
+                  var resource = this.$resource(this.createUrl);
+                  resource.query(this.create)
                       .then((response) => {
                       this.$message.success('创建用户成功！');
                       this.dialogCreateVisible=false;
@@ -338,34 +367,33 @@ export default {
               }
           });
       },
-
       // 更新用户资料
       updateUser() {
+
           this.$refs.update.validate((valid) => {
               if (valid) {
                   this.updateLoading=true;
-                  var actions = {
-                      update: {method: 'patch'}
-                  }
-                  var resource = this.$resource(this.url,{},actions);
-                  resource.update({"ids":this.currentId},this.update)
+                  var resource = this.$resource(this.updateUrl);
+                  resource.query(this.update)
                       .then((response) => {
-                      this.$message.success('修改用户资料成功！');
-                      this.dialogUpdateVisible=false;
-                      this.updateLoading=false;
-                      this.getUsers();
-              })
-              .catch((response) => {
-                  var data=response.data;
-                  console.log(data);
-                  if(data instanceof Array){
-                      this.$message.error(data[0]["message"]);
-                  }
-                  else if(data instanceof Object){
-                      this.$message.error(data["message"]);
-                  }
-                  this.updateLoading=false;
-              });
+
+                          this.$message.success('修改Option资料成功！');
+                          this.dialogUpdateVisible=false;
+                          this.updateLoading=false;
+                          this.getUsers();
+                      })
+                      .catch((response) => {
+
+                          var data=response.data;
+                          console.log(data);
+                          if(data instanceof Array){
+                              this.$message.error(data[0]["message"]);
+                          }
+                          else if(data instanceof Object){
+                              this.$message.error(data["message"]);
+                          }
+                          this.updateLoading=false;
+                      });
               }
               else {
                   return false;
@@ -373,15 +401,49 @@ export default {
           });
       },
 
+      // // 更新用户资料
+      // updateUser() {
+      //     this.$refs.update.validate((valid) => {
+      //         if (valid) {
+      //             this.updateLoading=true;
+      //             var actions = {
+      //                 update: {method: 'patch'}
+      //             }
+      //             var resource = this.$resource(this.url,{},actions);
+      //             resource.update({"ids":this.currentId},this.update)
+      //                 .then((response) => {
+      //                 this.$message.success('修改用户资料成功！');
+      //                 this.dialogUpdateVisible=false;
+      //                 this.updateLoading=false;
+      //                 this.getUsers();
+      //         })
+      //         .catch((response) => {
+      //             var data=response.data;
+      //             console.log(data);
+      //             if(data instanceof Array){
+      //                 this.$message.error(data[0]["message"]);
+      //             }
+      //             else if(data instanceof Object){
+      //                 this.$message.error(data["message"]);
+      //             }
+      //             this.updateLoading=false;
+      //         });
+      //         }
+      //         else {
+      //             return false;
+      //         }
+      //     });
+      // },
+
       // 删除单个用户
-      removeUser(user) {
-          this.$confirm('此操作将永久删除用户 ' + user.username + ', 是否继续?', '提示', { type: 'warning' })
+      removeUser(option) {
+          this.$confirm('此操作将永久删除Option ' + option.option_name + ', 是否继续?', '提示', { type: 'warning' })
               .then(() => {
               // 向请求服务端删除
-              var resource = this.$resource(this.url + "{/id}");
-              resource.delete({ id: user.id })
+              var resource = this.$resource(this.deleteUrl);
+              resource.query({ id: option.id })
                   .then((response) => {
-                  this.$message.success('成功删除了用户' + user.username + '!');
+                  this.$message.success('成功删除了Option' + option.option_name + '!');
                   this.getUsers();
               })
               .catch((response) => {
@@ -394,19 +456,19 @@ export default {
       },
       //删除多个用户
       removeUsers() {
-          this.$confirm('此操作将永久删除 ' + this.selected.length + ' 个用户, 是否继续?', '提示', { type: 'warning' })
+          this.$confirm('此操作将永久删除 ' + this.selected.length + ' 个Option, 是否继续?', '提示', { type: 'warning' })
               .then(() => {
               console.log(this.selected);
           var ids = [];
           //提取选中项的id
-          $.each(this.selected,(i, user)=> {
-                  ids.push(user.id);
+          $.each(this.selected,(i, option)=> {
+                  ids.push(option.id);
               });
           // 向请求服务端删除
-          var resource = this.$resource(this.url);
-          resource.remove({ids: ids.join(",") })
+          var resource = this.$resource(this.deleteUrl);
+          resource.query({id: ids.join(",") })
               .then((response) => {
-                  this.$message.success('删除了' + this.selected.length + '个用户!');
+                  this.$message.success('删除了' + this.selected.length + '个Option!');
                   this.getUsers();
           })
           .catch((response) => {
